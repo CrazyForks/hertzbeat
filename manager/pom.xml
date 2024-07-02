@@ -106,6 +106,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
+
+        <!--webflux-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
         <!--   freemarker     -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -195,6 +202,25 @@
                 <exclusion>
                     <groupId>org.openeuler</groupId>
                     <artifactId>bgmprovider</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- sms -->
+        <dependency>
+            <groupId>com.tencentcloudapi</groupId>
+            <artifactId>tencentcloud-sdk-java-sms</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.squareup.okhttp</groupId>
+                    <artifactId>logging-interceptor</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.squareup.okhttp</groupId>
+                    <artifactId>okhttp</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.squareup.okio</groupId>
+                    <artifactId>okio</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

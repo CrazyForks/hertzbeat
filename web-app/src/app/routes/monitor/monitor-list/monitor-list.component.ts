@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { I18NService } from '@core';
 import { ALAIN_I18N_TOKEN } from '@delon/theme';
@@ -40,7 +40,7 @@ import { formatTagName } from '../../../shared/utils/common-util';
   templateUrl: './monitor-list.component.html',
   styleUrls: ['./monitor-list.component.less']
 })
-export class MonitorListComponent implements OnInit {
+export class MonitorListComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -70,10 +70,9 @@ export class MonitorListComponent implements OnInit {
   filterStatus: number = 9;
   // app type search filter
   appSwitchModalVisible = false;
-  appSearchContent = '';
   appSearchOrigin: any[] = [];
-  appSearchResult: any[] = [];
   appSearchLoading = false;
+  intervalId: any;
 
   switchExportTypeModalFooter: ModalButtonOptions[] = [
     { label: this.i18nSvc.fanyi('common.button.cancel'), type: 'default', onClick: () => (this.isSwitchExportTypeModalVisible = false) }
@@ -99,6 +98,16 @@ export class MonitorListComponent implements OnInit {
       this.tableLoading = true;
       this.loadMonitorTable();
     });
+    // Set up an interval to refresh the table every 2 minutes
+    this.intervalId = setInterval(() => {
+      this.sync();
+    }, 12000); // 120000 ms = 2 minutes
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
   }
 
   onFilterSearchMonitors() {
@@ -130,10 +139,6 @@ export class MonitorListComponent implements OnInit {
 
   sync() {
     this.loadMonitorTable();
-  }
-
-  clearCurrentTag() {
-    this.router.navigateByUrl(`/monitors`);
   }
 
   getAppIconName(app: string | undefined): string {
@@ -499,17 +504,24 @@ export class MonitorListComponent implements OnInit {
       .subscribe(
         message => {
           if (message.code === 0) {
-            this.appSearchOrigin = [];
-            this.appSearchResult = [];
+            let appMenus: Record<string, any> = {};
             message.data.forEach((app: any) => {
+              let menus = appMenus[app.category];
               app.categoryLabel = this.i18nSvc.fanyi(`monitor.category.${app.category}`);
               if (app.categoryLabel == `monitor.category.${app.category}`) {
                 app.categoryLabel = this.i18nSvc.fanyi('monitor.category.custom');
               }
-              this.appSearchOrigin.push(app);
+              if (menus == undefined) {
+                menus = { label: app.categoryLabel, child: [app] };
+              } else {
+                menus.child.push(app);
+              }
+              appMenus[app.category] = menus;
             });
-            this.appSearchOrigin = this.appSearchOrigin.sort((a, b) => a.category?.localeCompare(b.category));
-            this.appSearchResult = this.appSearchOrigin;
+            this.appSearchOrigin = Object.entries(appMenus);
+            this.appSearchOrigin.sort((a, b) => {
+              return b[1].length - a[1].length;
+            });
           } else {
             console.warn(message.msg);
           }
@@ -526,20 +538,6 @@ export class MonitorListComponent implements OnInit {
 
   gotoMonitorAddDetail(app: string) {
     this.router.navigateByUrl(`/monitors/new?app=${app}`);
-  }
-
-  searchSwitchApp() {
-    if (this.appSearchContent === '' || this.appSearchContent == null) {
-      this.appSearchResult = this.appSearchOrigin;
-    } else {
-      this.appSearchResult = this.appSearchOrigin.filter(
-        app =>
-          app.label.toLowerCase().includes(this.appSearchContent.toLowerCase()) ||
-          app.categoryLabel.toLowerCase().includes(this.appSearchContent.toLowerCase()) ||
-          app.value.toLowerCase().includes(this.appSearchContent.toLowerCase()) ||
-          app.category.toLowerCase().includes(this.appSearchContent.toLowerCase())
-      );
-    }
   }
 
   // end: app type search filter
